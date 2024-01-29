@@ -381,6 +381,8 @@ int main(int argc, char **argv) {
   char *endptr = NULL;
 
   FILE *out = stdout;
+  FILE* fp;
+  char *filename = argv[1];
 
   char errbuf[RXTX_ERRBUF_SIZE] = "";
 
@@ -787,6 +789,8 @@ int main(int argc, char **argv) {
     out = stderr;
   }
 
+  fp = fopen(filename, "w" ); // Open file for writing
+
   for_each_set_ring(i, &rtd) {
     ring = rxtx_get_ring(&rtd, (unsigned int)i);
     if (!ring) {
@@ -794,12 +798,14 @@ int main(int argc, char **argv) {
       return EXIT_FAIL;
     }
 
-    fprintf(out, "%ju packets captured on " FSUBJECT "%d.\n",
+    fprintf(fp, "%ju packets captured on " FSUBJECT "%d.\n",
                                       rxtx_ring_get_packets_received(ring), i);
   }
 
-  fprintf(out, "%ju packets captured total.\n",
+  fprintf(fp, "%ju packets captured total.\n",
                                               rxtx_get_packets_received(&rtd));
+
+  fclose(fp);
 
   status = rxtx_close(&rtd);
   if (status == RXTX_ERROR) {
