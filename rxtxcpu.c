@@ -111,6 +111,7 @@ static const struct usage_opt usage_options[] = {
                          " (i.e. DIRECTION defaults to 'rx' when invocation is"
                        " '" RXSELF "', 'tx' when '" TXSELF "', and 'rxtx' when"
                                                           " '" RXTXSELF "')."},
+  {'f', "FILE", "Write packet core count to output file"},
   {'h', NULL,        "Display this help and exit."},
   {'l', ULIST,       "Capture only on " FSUBJECTS " in " ULIST " (e.g. if "
                         ULIST " is '0,2-4,6', only packets on " FSUBJECTS " 0,"
@@ -382,7 +383,8 @@ int main(int argc, char **argv) {
 
   FILE *out = stdout;
   FILE* fp;
-  char *filename = argv[1];
+  char* filename;
+  bool print_file = false;
 
   char errbuf[RXTX_ERRBUF_SIZE] = "";
 
@@ -437,7 +439,7 @@ int main(int argc, char **argv) {
    * argument. Otherwise '?' is returned for both invalid option and missing
    * option argument.
    */
-  while ((c = getopt_long(argc, argv, ":c:d:hl:m:pUvVw:", long_options, 0))
+  while ((c = getopt_long(argc, argv, ":c:d:f:hl:m:pUvVw:", long_options, 0))
                                                                        != -1) {
     switch (c) {
       case 'c':
@@ -472,6 +474,11 @@ int main(int argc, char **argv) {
           fprintf(stderr, "%s: %s\n", program_basename, errbuf);
           return EXIT_FAIL;
         }
+        break;
+
+      case 'f':
+        print_file = true;
+        filename = optarg;
         break;
 
       case 'h':
@@ -790,6 +797,7 @@ int main(int argc, char **argv) {
   }
 
   fp = fopen(filename, "w" ); // Open file for writing
+  fprintf(stdout, "file name is %s\n", filename);
 
   for_each_set_ring(i, &rtd) {
     ring = rxtx_get_ring(&rtd, (unsigned int)i);
@@ -798,13 +806,24 @@ int main(int argc, char **argv) {
       return EXIT_FAIL;
     }
 
-    fprintf(fp, "%ju packets captured on " FSUBJECT "%d.\n",
-                                      rxtx_ring_get_packets_received(ring), i);
+    if (print_file) {
+        fprintf(fp, "%ju packets captured on " FSUBJECT "%d.\n",
+                rxtx_ring_get_packets_received(ring), i);
+    }
+    else {
+      fprintf(out, "%ju packets captured on " FSUBJECT "%d.\n",
+              rxtx_ring_get_packets_received(ring), i);
+    }
+
   }
 
-  fprintf(fp, "%ju packets captured total.\n",
-                                              rxtx_get_packets_received(&rtd));
-
+  if (print_file){
+    fprintf(fp, "%ju packets captured total.\n",
+            rxtx_get_packets_received(&rtd));
+  } else {
+    fprintf(out, "%ju packets captured total.\n",
+            rxtx_get_packets_received(&rtd));
+  }
   fclose(fp);
 
   status = rxtx_close(&rtd);
