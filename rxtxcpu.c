@@ -796,8 +796,10 @@ int main(int argc, char **argv) {
     out = stderr;
   }
 
-  fp = fopen(filename, "w" ); // Open file for writing
-  fprintf(stdout, "file name is %s\n", filename);
+  if (print_file) {
+    fp = fopen(filename, "w" ); // Open file for writing
+    fprintf(stdout, "file name is %s\n", filename);
+  }
 
   for_each_set_ring(i, &rtd) {
     ring = rxtx_get_ring(&rtd, (unsigned int)i);
@@ -814,7 +816,6 @@ int main(int argc, char **argv) {
       fprintf(out, "%ju packets captured on " FSUBJECT "%d.\n",
               rxtx_ring_get_packets_received(ring), i);
     }
-
   }
 
   if (print_file){
@@ -824,7 +825,8 @@ int main(int argc, char **argv) {
     fprintf(out, "%ju packets captured total.\n",
             rxtx_get_packets_received(&rtd));
   }
-  fclose(fp);
+  if (print_file)
+    fclose(fp);
 
   status = rxtx_close(&rtd);
   if (status == RXTX_ERROR) {
